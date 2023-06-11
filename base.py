@@ -6,7 +6,7 @@ from time import sleep
 import os
 import wave
 import pygame
-
+import random
 
 #Setting up the API keys
 uberduck_auth = secret.uberduck_auth
@@ -15,6 +15,8 @@ openai.api_key = secret.token
 #Setting up the voice models from uberduck
 Spongebob = "2231cbd3-15a5-4571-9299-b58f36062c45"
 Patrick = "3b2755d1-11e2-4112-b75b-01c47560fb9c"
+Homer = "f8c7d125-a240-47e3-94be-18bb58179a2a"
+Bart = "c924eb5e-d5b1-4916-96ea-ac6948cdbe86"
 
 #Setup of Chatgpt
 def chat_gen(script, content):
@@ -115,9 +117,13 @@ def generete(prompt):
             gen_voice(line[11:],Spongebob,x)
         elif line.startswith("Patrick:"):
             gen_voice(line[8:],Patrick,x)
+        elif line.startswith("Homer:"):
+            gen_voice(line[6:],Homer,x)
+        elif line.startswith("Bart:"):
+            gen_voice(line[5:],Bart,x)
         else:
+            print(line)
             print("Error: Line does not start with Spongebob or Patrick")
-
     #Merges the audio files
     merge_wav_files([f"speech{i}.wav" for i in range(1, x + 1)], "output.wav")
 
@@ -135,3 +141,13 @@ def generete(prompt):
     return
 
 #generete('Spongebob, Patrick, Talking about how they commited 9/11')
+
+prompts = [
+    "Homer, Bart, Talking about how they commited 9/11",
+    "Homer, Spongebob, spongebob hunting childrens for living (he's hungry)",
+    "Homer, Bart, Talking about how they worked with walkter white to make meth",
+    "Spongebob, Patrick, spongebob says undertale is gay",
+    "Spongebob, Patrick, Homer, Bart, Talking about having a massive orgy",
+]
+
+generete(prompts[random.randint(0, len(prompts) - 1)])
