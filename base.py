@@ -7,6 +7,7 @@ import os
 import wave
 import pygame
 import random
+import soundfile as sf
 
 #Setting up the API keys
 uberduck_auth = secret.uberduck_auth
@@ -42,7 +43,7 @@ script = """
 """
 
 #Setup of the Voice Generator
-def gen_voice(text, voice, pos):
+def gen_voice(text, voice, pos,speeker):
     audio_uuid = requests.post(
         "https://api.uberduck.ai/speak",
         json=dict(speech=text, voicemodel_uuid=voice),
@@ -60,6 +61,11 @@ def gen_voice(text, voice, pos):
             file_path = f"speech{pos}.wav"
             with open(file_path, "wb") as f:
                 f.write(r.content)
+            
+            f = sf.SoundFile(f"speech{pos}.wav")
+            #append to script.txt
+            with open("script.txt", "a") as d:
+                d.write(f'{speeker}:{text}:{(f.frames / f.samplerate)}\n')
             return
 
 #Merge the audio files     
@@ -90,21 +96,22 @@ def merge_wav_files(file_list, output_filename):
             except wave.Error:
                 print(f"Skipping invalid file: {filename}")
 
-#Cleanup
-for filename in os.listdir(os.getcwd()):
-    if filename.startswith("speech"):
-        os.remove(filename)
-    if filename.startswith("output"):
-        os.remove(filename)
+def cleanup():
+    for filename in os.listdir(os.getcwd()):
+        if filename.startswith("speech"):
+            os.remove(filename)
+        if filename.startswith("output"):
+            os.remove(filename)
+        if filename.startswith("script"):
+            os.remove(filename)
 
-#Main
-
+#Main function
 def generete(prompt):
     #Grabs the responce from the chatgpt
     responce = chat_gen(script,prompt)
     responce = responce.replace("\n\n","\n")
 
-    print(responce)
+    #print(responce)
 
     #Splits the responce into lines
     lines = responce.split("\n")
@@ -114,13 +121,13 @@ def generete(prompt):
     for line in lines:
         x += 1
         if line.startswith("Spongebob:"):
-            gen_voice(line[11:],Spongebob,x)
+            gen_voice(line[11:],Spongebob,x,line[:9])
         elif line.startswith("Patrick:"):
-            gen_voice(line[8:],Patrick,x)
+            gen_voice(line[8:],Patrick,x,line[:7])
         elif line.startswith("Homer:"):
-            gen_voice(line[6:],Homer,x)
+            gen_voice(line[6:],Homer,x,line[:5])
         elif line.startswith("Bart:"):
-            gen_voice(line[5:],Bart,x)
+            gen_voice(line[5:],Bart,x,line[:4])
         else:
             print(line)
             print("Error: Line does not start with Spongebob or Patrick")
@@ -133,21 +140,24 @@ def generete(prompt):
             os.remove(filename)
 
     # Plays the audio file
-    pygame.mixer.init()
-    pygame.mixer.music.load("output.wav")
-    pygame.mixer.music.play()
-    while pygame.mixer.music.get_busy() == True:
-        continue
-    return
+    # pygame.mixer.init()
+    # pygame.mixer.music.load("output.wav")
+    # pygame.mixer.music.play()
+    # while pygame.mixer.music.get_busy() == True:
+    #     continue
+    # return
 
 #generete('Spongebob, Patrick, Talking about how they commited 9/11')
 
 prompts = [
-    "Homer, Bart, Talking about how they commited 9/11",
-    "Homer, Spongebob, spongebob hunting childrens for living (he's hungry)",
-    "Homer, Bart, Talking about how they worked with walkter white to make meth",
-    "Spongebob, Patrick, spongebob says undertale is gay",
-    "Spongebob, Patrick, Homer, Bart, Talking about having a massive orgy",
+    #"Homer, Bart, Talking about how they commited 9/11",
+    #"Homer, Spongebob, Spongebob hunting childrens for living (he's hungry)",
+    #"Homer, Bart, Talking about how they worked with walkter white to make meth",
+    "Spongebob, Patrick, Spongebob says undertale is gay",
+    "Spongebob, Patrick, Talking about having a massive orgy",
 ]
 
-generete(prompts[random.randint(0, len(prompts) - 1)])
+def run():
+    cleanup()
+    generete(prompts[random.randint(0, len(prompts) - 1)])
+    print("Done")
