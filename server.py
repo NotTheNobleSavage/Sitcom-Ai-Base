@@ -1,5 +1,5 @@
 from flask import Flask, send_file
-import spongebob
+import base
 import os
 app = Flask(__name__)
 
@@ -13,11 +13,6 @@ def spongebob():
 @app.route("/audio", methods=["GET"])
 def audio():
     print('hi')
-    return send_file("updog.wav")
+    return send_file("output.wav")
 
 app.run(threaded=True)
-
-steve = {
-    "name": "Steve",
-    "age": 25,
-}
