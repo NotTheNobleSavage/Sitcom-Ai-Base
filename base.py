@@ -56,7 +56,7 @@ def chat_gen(script, content):
     return responce
 
 #Creates the voice using the Uberduck API
-def gen_voice(text, voice, pos,speeker):
+def gen_voice(text, voice, pos):
     #Creates the request to the API
     audio_uuid = requests.post(
         "https://api.uberduck.ai/speak",
@@ -120,35 +120,35 @@ def cleanup():
             os.remove(filename)
 
 #Main function
-def generete(prompt):
-    #Generates the script based on the prompt
-    lines = chat_gen(base_promt,prompt)
+def run():
+    #Cleans up the files
+    cleanup()
+
+    #Chooses a random topic and creates the script
+    rand_prompt = random.choice(prompts)
+    script = chat_gen(base_promt,rand_prompt)
 
     #Loops through the lines and creates the audio files and script file
-    for line in lines:
+    for line in script:
         if line.split(":")[0] in Voice_Models.keys():
             voice_id = Voice_Models[line.split(":")[0]].strip()
             text = line.split(":")[1].strip()
             speeker = line.split(":")[0].strip()
-            pos = lines.index(line)
+            pos = script.index(line)
 
             print(voice_id, text, speeker, pos)
-            gen_voice(text, voice_id, pos, speeker)
+            gen_voice(text, voice_id, pos)
             create_script(text, speeker, pos)
         else:
             print("Not a valid speeker")
             return
 
     #Merges the audio files into one
-    merge_wav_files([f"speech{i}.wav" for i in range(len(lines))], "output.wav")
+    merge_wav_files([f"speech{i}.wav" for i in range(len(script))], "output.wav")
 
     #Cleans up the audio files
     for filename in os.listdir(os.getcwd()):
         if filename.startswith("speech"):
             os.remove(filename)
 
-#Runs the program
-def run():
-    cleanup()
-    generete(prompts[random.randint(0, len(prompts) - 1)])
 run()
