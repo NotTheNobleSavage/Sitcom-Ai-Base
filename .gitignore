@@ -2,3 +2,4 @@ secret.py
 output.wav
 script.txt
 __pycache__
+*.wav
