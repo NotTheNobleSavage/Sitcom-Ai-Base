@@ -17,3 +17,4 @@ Now I have no clue whats going on here (thanks stack overflow), we got some func
 6) And you know build and run or somthing
 
 Feel Free to spam me with issues or just fork and build ya own I dont care.
+test
