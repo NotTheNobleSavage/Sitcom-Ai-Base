@@ -17,4 +17,3 @@ This script, written in C#, handles Unity's interactions with Server.py. It incl
 6) Build and run the project in Unity.
 
 Feel Free to spam me with issues or just fork and build ya own I dont care.
-test
