@@ -5,7 +5,6 @@ import requests
 from time import sleep
 import os
 import wave
-import pygame
 import random
 import soundfile as sf
 
@@ -13,24 +12,16 @@ import soundfile as sf
 uberduck_auth = secret.uberduck_auth
 openai.api_key = secret.token
 
-#Setting up the voice models from uberduck
-Spongebob = "2231cbd3-15a5-4571-9299-b58f36062c45"
-Patrick = "3b2755d1-11e2-4112-b75b-01c47560fb9c"
-Homer = "f8c7d125-a240-47e3-94be-18bb58179a2a"
-Bart = "c924eb5e-d5b1-4916-96ea-ac6948cdbe86"
+#Setting up the Voice Models
+Voice_Models = {
+    "Spongebob": "2231cbd3-15a5-4571-9299-b58f36062c45",
+    "Patrick": "3b2755d1-11e2-4112-b75b-01c47560fb9c",
+    "Homer": "f8c7d125-a240-47e3-94be-18bb58179a2a",
+    "Bart": "c924eb5e-d5b1-4916-96ea-ac6948cdbe86"
+}
 
-#Setup of Chatgpt
-def chat_gen(script, content):
-    reply = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=[
-            {"role": "system", "content": script},
-            {"role": "user", "content": content},
-        ]
-    )
-    return reply['choices'][0]['message']['content'] # type: ignore
-
-script = """
+#Setting up the base promt
+base_promt = """
     You are to create scripts. 
     You will be giving the topic and who to act like. 
     Make sure you are in character.
@@ -42,15 +33,40 @@ script = """
     Keep everything dumb and stupid.
 """
 
-#Setup of the Voice Generator
+#Setting up the topics
+prompts = [
+    "Spongebob, Patrick, Spongebob says undertale is gay",
+    "Spongebob, Patrick, Talking about having a massive orgy",
+]
+
+#Creates the script using the OpenAI API
+def chat_gen(script, content):
+    reply = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=[
+            {"role": "system", "content": script},
+            {"role": "user", "content": content},
+        ]
+    )
+
+    #Cleanup of the responce 
+    responce = reply['choices'][0]['message']['content'] # type: ignore
+    responce = responce.replace("\n\n","\n")
+    responce = responce.split("\n")
+    return responce
+
+#Creates the voice using the Uberduck API
 def gen_voice(text, voice, pos,speeker):
+    #Creates the request to the API
     audio_uuid = requests.post(
         "https://api.uberduck.ai/speak",
         json=dict(speech=text, voicemodel_uuid=voice),
         auth=uberduck_auth,
     ).json()["uuid"]
+
+    #Checks the status of the request and downloads the audio file
     for t in range(50):
-        sleep(1) # check status every second for 10 seconds.
+        sleep(1)
         output = requests.get(
             "https://api.uberduck.ai/speak-status",
             params=dict(uuid=audio_uuid),
@@ -61,14 +77,15 @@ def gen_voice(text, voice, pos,speeker):
             file_path = f"speech{pos}.wav"
             with open(file_path, "wb") as f:
                 f.write(r.content)
-            
-            f = sf.SoundFile(f"speech{pos}.wav")
-            #append to script.txt
-            with open("script.txt", "a") as d:
-                d.write(f'{speeker}:{text}:{(f.frames / f.samplerate)}\n')
             return
 
-#Merge the audio files     
+#Creates the script file
+def create_script(text, speeker, pos):
+    with open("script.txt", 'a') as f:
+        d = sf.SoundFile(f"speech{pos}.wav")
+        f.write(f'{speeker}:{text}:{(d.frames / d.samplerate)}\n')
+
+#Merges the audio files  
 def merge_wav_files(file_list, output_filename):
     # Open first valid file and get details
     params = None
@@ -96,68 +113,42 @@ def merge_wav_files(file_list, output_filename):
             except wave.Error:
                 print(f"Skipping invalid file: {filename}")
 
+#Cleans up file that will be made later
 def cleanup():
     for filename in os.listdir(os.getcwd()):
-        if filename.startswith("speech"):
-            os.remove(filename)
-        if filename.startswith("output"):
-            os.remove(filename)
-        if filename.startswith("script"):
+        if filename.startswith(("speech", "output", "script")):
             os.remove(filename)
 
 #Main function
 def generete(prompt):
-    #Grabs the responce from the chatgpt
-    responce = chat_gen(script,prompt)
-    responce = responce.replace("\n\n","\n")
+    #Generates the script based on the prompt
+    lines = chat_gen(base_promt,prompt)
 
-    #print(responce)
-
-    #Splits the responce into lines
-    lines = responce.split("\n")
-
-    #Goes through each line and checks if it is spongebob or patrick and then generates the audio file
-    x = 0
+    #Loops through the lines and creates the audio files and script file
     for line in lines:
-        x += 1
-        if line.startswith("Spongebob:"):
-            gen_voice(line[11:],Spongebob,x,line[:9])
-        elif line.startswith("Patrick:"):
-            gen_voice(line[8:],Patrick,x,line[:7])
-        elif line.startswith("Homer:"):
-            gen_voice(line[6:],Homer,x,line[:5])
-        elif line.startswith("Bart:"):
-            gen_voice(line[5:],Bart,x,line[:4])
+        if line.split(":")[0] in Voice_Models.keys():
+            voice_id = Voice_Models[line.split(":")[0]].strip()
+            text = line.split(":")[1].strip()
+            speeker = line.split(":")[0].strip()
+            pos = lines.index(line)
+
+            print(voice_id, text, speeker, pos)
+            gen_voice(text, voice_id, pos, speeker)
+            create_script(text, speeker, pos)
         else:
-            print(line)
-            print("Error: Line does not start with Spongebob or Patrick")
-    #Merges the audio files
-    merge_wav_files([f"speech{i}.wav" for i in range(1, x + 1)], "output.wav")
+            print("Not a valid speeker")
+            return
+
+    #Merges the audio files into one
+    merge_wav_files([f"speech{i}.wav" for i in range(len(lines))], "output.wav")
 
     #Cleans up the audio files
     for filename in os.listdir(os.getcwd()):
         if filename.startswith("speech"):
             os.remove(filename)
 
-    # Plays the audio file
-    # pygame.mixer.init()
-    # pygame.mixer.music.load("output.wav")
-    # pygame.mixer.music.play()
-    # while pygame.mixer.music.get_busy() == True:
-    #     continue
-    # return
-
-#generete('Spongebob, Patrick, Talking about how they commited 9/11')
-
-prompts = [
-    #"Homer, Bart, Talking about how they commited 9/11",
-    #"Homer, Spongebob, Spongebob hunting childrens for living (he's hungry)",
-    #"Homer, Bart, Talking about how they worked with walkter white to make meth",
-    "Spongebob, Patrick, Spongebob says undertale is gay",
-    "Spongebob, Patrick, Talking about having a massive orgy",
-]
-
+#Runs the program
 def run():
     cleanup()
     generete(prompts[random.randint(0, len(prompts) - 1)])
-    print("Done")
+run()
