@@ -7,6 +7,9 @@ import os
 import wave
 import random
 import soundfile as sf
+from concurrent.futures import ThreadPoolExecutor
+import concurrent
+
 
 #Setting up the API keys
 uberduck_auth = secret.uberduck_auth
@@ -58,14 +61,12 @@ def chat_gen(script, content):
 
 #Creates the voice using the Uberduck API
 def gen_voice(text, voice, pos):
-    #Creates the request to the API
     audio_uuid = requests.post(
         "https://api.uberduck.ai/speak",
         json=dict(speech=text, voicemodel_uuid=voice),
         auth=uberduck_auth,
     ).json()["uuid"]
 
-    #Checks the status of the request and downloads the audio file
     for t in range(50):
         sleep(1)
         output = requests.get(
@@ -78,7 +79,7 @@ def gen_voice(text, voice, pos):
             file_path = f"speech{pos}.wav"
             with open(file_path, "wb") as f:
                 f.write(r.content)
-            return
+            return pos, file_path
 
 #Creates the script file
 def create_script(text, speeker, pos):
@@ -129,21 +130,21 @@ def run():
     rand_prompt = random.choice(prompts)
     script = chat_gen(base_promt,rand_prompt)
 
-    #Loops through the lines and creates the audio files and script file
-    for line in script:
-        if line.split(":")[0] in Voice_Models.keys():
-            voice_id = Voice_Models[line.split(":")[0]].strip()
-            text = line.split(":")[1].strip()
-            speeker = line.split(":")[0].strip()
-            pos = script.index(line)
+    futures = []
+    with ThreadPoolExecutor() as executor:
+        for line in script:
+            if line.split(":")[0] in Voice_Models.keys():
+                voice_id = Voice_Models[line.split(":")[0]].strip()
+                text = line.split(":")[1].strip()
+                speeker = line.split(":")[0].strip()
+                pos = script.index(line)
 
-            print(voice_id, text, speeker, pos)
-            gen_voice(text, voice_id, pos)
-            create_script(text, speeker, pos)
-        else:
-            print("Not a valid speeker")
-            return
+                futures.append(executor.submit(gen_voice, text, voice_id, pos))
 
+    for future in concurrent.futures.as_completed(futures):
+        pos, file_path = future.result()
+        create_script(script[pos].split(":")[1].strip(), script[pos].split(":")[0].strip(), pos)
+        
     #Merges the audio files into one
     merge_wav_files([f"speech{i}.wav" for i in range(len(script))], "output.wav")
 
@@ -151,3 +152,5 @@ def run():
     for filename in os.listdir(os.getcwd()):
         if filename.startswith("speech"):
             os.remove(filename)
+
+run()
