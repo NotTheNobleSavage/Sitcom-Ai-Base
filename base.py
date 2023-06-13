@@ -55,6 +55,7 @@ def chat_gen(script, content):
     responce = responce.replace("\n\n","\n")
     responce = responce.split("\n")
     return responce
+    test
 
 #Creates the voice using the Uberduck API
 def gen_voice(text, voice, pos):
