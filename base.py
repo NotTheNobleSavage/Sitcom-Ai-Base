@@ -108,8 +108,8 @@ def gen_voice(text, voice, pos):
             response_json = response.json()
 
             if 'detail' in response_json:  # Rate limit exceeded
-                logging.warning("Rate limit exceeded. Sleeping for 15 seconds before retrying...")
-                time.sleep(15)  # Wait for rate limit reset
+                logging.warning("Rate limit exceeded. Sleeping for 5 seconds before retrying...")
+                time.sleep(5)  # Wait for rate limit reset
                 continue
             
             if 'uuid' in response_json:
