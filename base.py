@@ -97,18 +97,31 @@ def gen_voice(text, voice, pos):
     try:
         #Creates the request to the API
         logging.info("Voice Request Started")
-        response = requests.post(
-            "https://api.uberduck.ai/speak",
-            json=dict(speech=text, voicemodel_uuid=voice),
-            auth=uberduck_auth,
-        ).json()
+        
+        for _ in range(10):  # Allow up to 10 attempts
+            response = requests.post(
+                "https://api.uberduck.ai/speak",
+                json=dict(speech=text, voicemodel_uuid=voice),
+                auth=uberduck_auth,
+            )
 
-        if 'uuid' in response:
-            logging.info("Voice Request Finished")
-            audio_uuid = response["uuid"]
+            response_json = response.json()
+
+            if 'detail' in response_json:  # Rate limit exceeded
+                logging.warning("Rate limit exceeded. Sleeping for 15 seconds before retrying...")
+                time.sleep(15)  # Wait for rate limit reset
+                continue
+            
+            if 'uuid' in response_json:
+                logging.info("Voice Request Finished")
+                audio_uuid = response_json["uuid"]
+                break
+            else:
+                logging.error("Voice Request Failed: UUID not found in response")
+                logging.debug(f"Voice Request Failed: {response_json}")
+                return None, None
         else:
-            logging.error("Voice Request Failed: UUID not found in response")
-            logging.debug(f"Voice Request Failed: {response}")
+            logging.error("Voice Request Failed after 10 attempts due to rate limiting.")
             return None, None
 
         #Checks the status of the request and downloads the audio file
@@ -255,5 +268,8 @@ def run():
 x = 1
 while True:
     run()
-    print(f"Run {x} is finished")
+    if 'output.wav' in os.listdir(os.getcwd()):
+        print(f"Run {x} is successful. Output.wav is created.")
+    else:
+        print(f"Run {x} is unsuccessful. Output.wav is not created.")
     x += 1
