@@ -37,6 +37,7 @@ base_promt = """
 prompts = [
     "Spongebob, Patrick, Spongebob says undertale is gay",
     "Spongebob, Patrick, Talking about having a massive orgy",
+    "Spongebob, Patrick, Talking about the heat deth of the universe",
 ]
 
 #Creates the script using the OpenAI API
@@ -150,5 +151,3 @@ def run():
     for filename in os.listdir(os.getcwd()):
         if filename.startswith("speech"):
             os.remove(filename)
-
-run()

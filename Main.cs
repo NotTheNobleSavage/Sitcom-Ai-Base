@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
+using TMPro;
 
 public class AudioScriptManager : MonoBehaviour
 {
     public AudioSource audioSource;
     public string serverURL = "http://localhost:5000"; // replace with your server's URL
+    public TMP_Text textObject;
 
     void Start()
     {
@@ -74,7 +76,7 @@ public class AudioScriptManager : MonoBehaviour
             lookAtPosition.y += 1.0f;  // Add vertical offset here. Adjust the value as needed.
 
             Camera.main.transform.LookAt(lookAtPosition);
-
+            textObject.text = parts[1].Trim();
             yield return new WaitForSeconds(duration);
         }
     }

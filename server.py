@@ -5,7 +5,6 @@ import base
 app = Flask(__name__)
 
 base.cleanup()
-
 @app.route("/audio", methods=["GET"])
 def audio():
     base.run()
