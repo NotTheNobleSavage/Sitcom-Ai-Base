@@ -9,6 +9,7 @@ import random
 import soundfile as sf
 from concurrent.futures import ThreadPoolExecutor
 import concurrent
+from concurrent.futures import wait
 
 
 #Setting up the API keys
@@ -41,6 +42,11 @@ prompts = [
     "Spongebob, Patrick, Spongebob says undertale is gay",
     "Spongebob, Patrick, Talking about having a massive orgy",
     "Spongebob, Patrick, Talking about the heat deth of the universe",
+    "Spongebob, Patrick, Secret Krabby patty ingredient is Monosodium glutamate also known as E621",
+    "Spongebob, Patrick, Spongebob is a furry",
+    "Spongebob, Patrick, Spongebob is a brony",
+    "Spongebob, Patrick, Spongebob is a weeb",
+    "Spongebob, Patrick, Spongebob hates black lives matters and Patrick says the world will end in October 2nd 2025",
 ]
 
 #Creates the script using the OpenAI API
@@ -136,15 +142,23 @@ def run():
             if line.split(":")[0] in Voice_Models.keys():
                 voice_id = Voice_Models[line.split(":")[0]].strip()
                 text = line.split(":")[1].strip()
-                speeker = line.split(":")[0].strip()
+                speaker = line.split(":")[0].strip()
                 pos = script.index(line)
 
                 futures.append(executor.submit(gen_voice, text, voice_id, pos))
 
-    for future in concurrent.futures.as_completed(futures):
+    wait(futures)
+
+    for future in futures:
         pos, file_path = future.result()
         create_script(script[pos].split(":")[1].strip(), script[pos].split(":")[0].strip(), pos)
-        
+
+    #Check if all the speech.wav files are there
+    for i in range(len(script)):
+        if not os.path.isfile(f"speech{i}.wav"):
+            print("Something went wrong, please try again")
+            return
+
     #Merges the audio files into one
     merge_wav_files([f"speech{i}.wav" for i in range(len(script))], "output.wav")
 
@@ -152,5 +166,3 @@ def run():
     for filename in os.listdir(os.getcwd()):
         if filename.startswith("speech"):
             os.remove(filename)
-
-run()
