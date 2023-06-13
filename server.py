@@ -8,7 +8,10 @@ base.cleanup()
 @app.route("/audio", methods=["GET"])
 def audio():
     base.run()
-    return send_file("output.wav")
+    if os.path.exists("output.wav"):
+        return send_file("output.wav")
+    else:
+        return "Error"
 
 @app.route("/script", methods=["GET"])
 def script():
