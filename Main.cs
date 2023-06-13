@@ -13,7 +13,15 @@ public class AudioScriptManager : MonoBehaviour
 
     void Start()
     {
-        StartCoroutine(GetDataFromServer());
+        StartCoroutine(LoopDataFromServer());
+    }
+
+    IEnumerator LoopDataFromServer()
+    {
+        while (true)
+        {
+            yield return StartCoroutine(GetDataFromServer());
+        }
     }
 
     IEnumerator GetDataFromServer()
@@ -21,7 +29,7 @@ public class AudioScriptManager : MonoBehaviour
         yield return StartCoroutine(GetAudioClip());
         yield return StartCoroutine(GetScript());
         audioSource.Play();
-        StartCoroutine(ProcessScript());
+        yield return StartCoroutine(ProcessScript());
     }
 
     IEnumerator GetAudioClip()
