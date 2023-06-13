@@ -19,4 +19,4 @@ This script, written in C#, handles Unity's interactions with Server.py. It incl
 Feel Free to spam me with issues or just fork and build ya own I dont care.
 
 Tutorial:
-[![Watch the video](https://img.youtube.com/vi/M4fTrbTASkY/maxresdefault.jpg)]([https://youtu.be/vt5fpE0bzSY](https://youtu.be/M4fTrbTASkY))
+https://www.youtube.com/watch?v=M4fTrbTASkY&feature=youtu.be
