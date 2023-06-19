@@ -4,3 +4,4 @@ script.txt
 __pycache__
 *.wav
 *.log
+*.txt

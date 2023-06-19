@@ -36,7 +36,9 @@ Voice_Models = {
     "Spongebob": "2231cbd3-15a5-4571-9299-b58f36062c45",
     "Patrick": "3b2755d1-11e2-4112-b75b-01c47560fb9c",
     "Homer": "f8c7d125-a240-47e3-94be-18bb58179a2a",
-    "Bart": "c924eb5e-d5b1-4916-96ea-ac6948cdbe86"
+    "Bart": "c924eb5e-d5b1-4916-96ea-ac6948cdbe86",
+    "Steve Austin": '4c1b2408-ac92-429c-be94-598892fe29ca',
+    "Peter Griffin": '9dafbc65-2f19-4bd8-859d-a35237599e83',
 }
 
 #Setting up the base promt
@@ -54,14 +56,17 @@ base_promt = """
 
 #Setting up the topics
 prompts = [
+    #"Steve Austin, Peter Griffin, Talking about how they want to blow up the Paramount headquarters",
     "Spongebob, Patrick, Spongebob says undertale is gay",
     "Spongebob, Patrick, Talking about having a massive orgy",
-    "Spongebob, Patrick, Talking about the heat deth of the universe",
+    #"Spongebob, Patrick, Steve Austin, Talking about the heat deth of the universe, Steve Austin thinks he can take out the universe",
     "Spongebob, Patrick, Secret Krabby patty ingredient is Monosodium glutamate also known as E621",
     "Spongebob, Patrick, Spongebob is a furry",
     "Spongebob, Patrick, Spongebob is a brony",
     "Spongebob, Patrick, Spongebob is a weeb",
-    "Spongebob, Patrick, Spongebob hates black lives matters and Patrick says the world will end in October 2nd 2025",
+    #"Spongebob, Patrick, Peter Griffin, Steve Austin, Talking about how they hate black lives matters and Patrick says the world will end in October 2nd 2025",
+    #"Spongebob, Patrick, Steve Austin, Talking about how they want to blow up the Paramount headquarters",
+    #"Spongebob, Patrick, Steve Austin, Talking about how the youtbue livestream of the Spongebob AI show was shut down, due to copyright. And that they are getting deleted after this script" 
 ]
 
 #Creates the script using the OpenAI API
@@ -69,7 +74,7 @@ def chat_gen(script, content):
     try:
         logging.info("Script Generation Started")
         reply = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo-0613",
             messages=[
                 {"role": "system", "content": script},
                 {"role": "user", "content": content},
@@ -91,14 +96,13 @@ def chat_gen(script, content):
         logging.error(f"Error occurred in chat_gen: {e}")
         return None
 
-
 #Creates the voice using the Uberduck API
 def gen_voice(text, voice, pos):
     try:
         #Creates the request to the API
         logging.info("Voice Request Started")
         
-        for _ in range(10):  # Allow up to 10 attempts
+        for _ in range(30):  # Allow up to 10 attempts
             response = requests.post(
                 "https://api.uberduck.ai/speak",
                 json=dict(speech=text, voicemodel_uuid=voice),
@@ -147,10 +151,10 @@ def gen_voice(text, voice, pos):
         logging.info("Voice Download Finished")
 
 #Creates the script file
-def create_script(text, speaker, pos):
+def create_script(text, speaker, pos, filename):
     try:
         logging.info("Script Creation Started")
-        with open("script.txt", 'a') as f:
+        with open(f"script{filename}.txt", 'a') as f:
             d = sf.SoundFile(f"speech{pos}.wav")
             f.write(f'{speaker}:{text}:{(d.frames / d.samplerate)}\n')
         logging.info("Script Creation Finished")
@@ -210,11 +214,9 @@ def cleanup():
         logging.error(f"An unexpected error occurred during cleanup: {e}")
 
 #Main function
-def run():
+def run(somthing):
     try:
         logging.info("Program Started")
-        #Cleans up the files
-        cleanup()
 
         #Chooses a random topic and creates the script
         rand_prompt = random.choice(prompts)
@@ -240,7 +242,7 @@ def run():
         for future in futures:
             pos, file_path = future.result()
             if file_path is not None:
-                create_script(script[pos].split(":")[1].strip(), script[pos].split(":")[0].strip(), pos)
+                create_script(script[pos].split(":")[1].strip(), script[pos].split(":")[0].strip(), pos, somthing)
 
         #Check if all the speech.wav files are there
         for i in range(len(script)):
@@ -249,7 +251,7 @@ def run():
                 return
 
         #Merges the audio files into one
-        merge_wav_files([f"speech{i}.wav" for i in range(len(script))], "output.wav")
+        merge_wav_files([f"speech{i}.wav" for i in range(len(script))], f"output{somthing}.wav")
 
         #Cleans up the audio files
         for filename in os.listdir(os.getcwd()):
@@ -265,11 +267,9 @@ def run():
     except Exception as e:
         logging.error(f"An unexpected error occurred in run: {e}")
 
-x = 1
-while True:
-    run()
-    if 'output.wav' in os.listdir(os.getcwd()):
-        print(f"Run {x} is successful. Output.wav is created.")
-    else:
-        print(f"Run {x} is unsuccessful. Output.wav is not created.")
-    x += 1
+def run_que():
+    queue = []
+    while True:
+        if len(queue) < 5:
+            run(len(queue))
+            queue.append(f'output{len(queue)}.wav')
