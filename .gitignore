@@ -3,3 +3,5 @@ output.wav
 script.txt
 __pycache__
 *.wav
+*.log
+*.txt
